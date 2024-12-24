@@ -1,118 +1,126 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
+  DarkTheme,
+  DefaultTheme,
+  NavigationContainer,
+} from '@react-navigation/native';
+import {
+  createNativeStackNavigator,
+  NativeStackScreenProps,
+} from '@react-navigation/native-stack';
+import React, {Component} from 'react';
+import {paramList} from './type';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import 'react-native-gesture-handler';
+import ThemeContext from './ThemeContext';
+import {
+  Keyboard,
+  KeyboardAvoidingView,
   StyleSheet,
   Text,
-  useColorScheme,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import './gesture-handler';
+// import MyTabs from './src/Components/BottomNavigator/MyTabs';
+import Loginform from './src/Components/Loginform';
+import SignUp from './src/Components/SignUp';
+import MyDrawer from './src/Components/DrawerNavigator/MyDrawer';
+import SplashScreen from './src/Screens/SplashScreen';
+import MyTabs from './src/Components/BottomNavigator/MyTabs';
+import {TouchableOpacity} from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+type Props = NativeStackScreenProps<paramList, 'Login'>;
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+type RootStackParamList = {
+  Login: undefined;
+  Signup: undefined;
+  Tabspage: undefined;
+  MyDrawer: undefined;
+};
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+interface IState {
+  tokenValue: boolean | null;
+  toggleTheme: boolean | string;
 }
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+class App extends Component<Props, IState> {
+  themeListener: any;
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      tokenValue: null,
+      toggleTheme: false,
+    };
+  }
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  componentDidMount() {
+    this.getToken();
+  }
+
+  getToken = async () => {
+    try {
+      const token = await AsyncStorage.getItem('AccessToken');
+      if (token) {
+        this.setState({tokenValue: true});
+      } else {
+        this.setState({tokenValue: false});
+      }
+    } catch (error) {
+      this.setState({tokenValue: false});
+      console.log(error);
+    }
   };
 
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
+  changeThemeMode=(toggleTheme: boolean)=>{
+    this.setState({toggleTheme})
+  }
+
+  render() {
+    const {tokenValue, toggleTheme} = this.state;
+
+    if (tokenValue === null) {
+      return <SplashScreen />;
+    }
+    return (
+      <ThemeContext.Provider value={{ toggleTheme, changeThemeMode: this.changeThemeMode }}>
+     {/* <KeyboardAvoidingView style={styles.keyContainer}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
+          <NavigationContainer>
+            <Stack.Navigator
+              screenOptions={{headerShown: false}}
+              initialRouteName={tokenValue ? 'MyDrawer' : 'Login'}>
+              <Stack.Screen name="Login" component={Loginform} />
+              <Stack.Screen name="Signup" component={SignUp} />
+              <Stack.Screen name="MyDrawer" component={MyDrawer} />
+            </Stack.Navigator>
+          </NavigationContainer>
+        {/* </TouchableWithoutFeedback>
+      </KeyboardAvoidingView> */}
+      </ThemeContext.Provider>
+    );
+  }
 }
 
+export default App;
+
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  keyContainer: {
+    // backgroundColor: '#f9f9f9',
+    flex: 1,
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  mainContainer: {
+    backgroundColor: '#f9f9f9',
+    flex: 1,
+    margin: 1,
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  darkMode: {
+    color: '#fff',
+    backgroundColor: '#000',
   },
-  highlight: {
-    fontWeight: '700',
+  lightMode: {
+    color: '#000',
+    backgroundColor: '#fff',
   },
 });
-
-export default App;
